@@ -1,0 +1,241 @@
+---
+title: "AE 21: Multiple regression I"
+author: "STA 199"
+date: "Nov 8, 2021`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r, warning = FALSE, message  = FALSE}
+library(tidyverse)
+library(tidymodels)
+library(scatterplot3d)
+```
+
+# Reminder
+
+- Lab 9 due on Tuesday at 11:59 PM.
+
+- Exam 2 starting on Thursday.
+
+# Learning goals
+
+- Gain proficiency with multiple linear regression
+- Review what a dummy variable is
+
+To begin, we'll work with a dataset with information on the price of sports cars new set of pokemon data.
+
+```{r load-data, message = F}
+sports_car_prices <- read_csv("sportscars.csv")
+pokemon <- read_csv("pokemon150.csv")
+```
+
+## The linear model with one predictor
+
+- Previously, we were interested in the $\beta_0$ (population parameter for the intercept)
+and the $\beta_1$ (population parameter for the slope) in the following model:
+
+$$ \hat{y} = \beta_0 + \beta_1~x + \epsilon $$
+
+- Unfortunately, we can't get these values
+
+- So we use sample statistics to estimate them:
+
+$$ \hat{y} = b_0 + b_1~x $$
+
+## The linear model with multiple predictors
+
+$$ \hat{y} = \beta_0 + \beta_1~x_1 + \beta_2~x_2 + \cdots + \beta_k~x_k +\epsilon $$
+- Sample model that we use to estimate the population model:
+  
+$$ \hat{y} = b_0 + b_1~x_1 + b_2~x_2 + \cdots + b_k~x_k $$
+
+## An example
+
+The file `sportscars.csv` contains prices for Porsche and Jaguar cars for sale
+on cars.com.
+
+`car`: car make (Jaguar or Porsche)
+
+`price`: price in USD
+
+`age`: age of the car in years
+
+`mileage`: previous miles driven
+
+## The linear model with a single predictor
+
+```{r pricesmodel}
+prices_model <- linear_reg() %>%
+  set_engine("lm") %>%
+  fit(price ~ age, data = sports_car_prices)
+tidy(prices_model)
+```
+
+But is the age the only variable that predicts price?
+
+## The linear model with multiple predictors
+
+$$ \hat{y} = \beta_0 + \beta_1~x_1 + \beta_2~x_2 + \cdots + \beta_k~x_k +\epsilon $$
+
+- Sample model that we use to estimate the population model:
+  
+$$ \hat{y} = b_0 + b_1~x_1 + b_2~x_2 + \cdots + b_k~x_k $$
+
+Let's add a variable. 
+
+## Multiple Regression 
+
+```{r maineffects}
+m_main <- linear_reg() %>%
+  set_engine("lm") %>%
+  fit(price ~ age + car, data = sports_car_prices)
+m_main %>%
+  tidy() %>%
+  select(term, estimate)
+```
+
+Linear model:
+
+$$ \widehat{price} = 44310 - 2487~age + 21648~carPorsche $$
+
+
+- Plug in 0 for `carPorsche` to get the linear model for Jaguars.
+- Plug in 1 for `carPorsche` to get the linear model for Porsches.
+
+- Jaguar: 
+$$\begin{align}\widehat{price} &= 44310 - 2487~age + 21648 \times 0\\
+&= 44310 - 2487~age\\\end{align}$$
+
+- Porsche: 
+$$\begin{align}\widehat{price} &= 44310 - 2487~age + 21648 \times 1\\
+&= 65958 - 2487~age\\\end{align}$$
+
+
+- Rate of change in price as the age of the car increases does not depend on make of car (same slopes)
+- Porsches are consistently more expensive than Jaguars (different intercepts)
+
+## Main effects, numerical and categorical predictors
+
+```{r maineffects2}
+m_main %>%
+  tidy() %>%
+  select(term, estimate)
+```
+
+```{r maincoefs}
+m_main_coefs <- m_main %>%
+  tidy() %>%
+  select(term, estimate)
+m_main_coefs
+```
+
+- **All else held constant**, for each additional year of a car's age, the price
+of the car is predicted to decrease, on average, by $2,487.
+
+- **All else held constant**, Porsches are predicted, on average, to have a 
+price that is $21,648 greater than Jaguars.
+
+- Jaguars that have an age of 0 are predicted, on average, to have a price of $44,310.
+
+# Adjusted R-Squared
+
+- The strength of the fit of a linear model is commonly evaluated using $R^2$.
+
+- It tells us what percentage of the variability in the response variable is explained by the model. The remainder of the variability is unexplained.
+
+## Please recall:
+
+- We can write explained variation using the following ratio of sums of squares:
+
+$$ R^2 =  1 - \left( \frac{ SS\_{Error} }{ SS\_{Total} } \right) $$
+
+where $SS_{Error}$ is the sum of squared residuals and $SS_{Total}$ is the total
+variance in the response variable.
+
+## Adjusted $R^2$
+
+$$ R^2\_{adj} = 1 - \left( \frac{ SS\_{Error} }{ SS\_{Total} } \times \frac{n - 1}{n - k - 1} \right), $$
+
+where $n$ is the number of observations and $k$ is the number of predictors in 
+the model.
+
+- Adjusted $R^2$ doesn't increase if the new variable does not provide any new 
+information or is completely unrelated and can even decrease.
+
+- This makes adjusted $R^2$ a preferable metric for model selection in multiple
+regression models.
+
+Let's find the $R^2$ and adjusted $R^2$ for the `m_main` model we built.
+
+```{r adj-r2}
+glance(m_main)$r.squared
+glance(m_main)$adj.r.squared
+```
+
+# Exercises
+
+Now, let's do some exercises with the Pokemon data.
+
+## Exercise 1) 
+
+Are height and weight correlated with a Pokemon's hit points? Run a bivariate linear regression model for each of these.
+
+```{r bivariate}
+# code here
+```
+
+## Exercise 2)
+
+Other variables may be correlated with `hp`, e.g. a pokemon's legendary status. 
+
+Do legendary pokemon have higher `hp` than non-legendary pokemon? Compare mean `hp` between groups to support your answer.
+
+```{r hp-vs-legendary}
+# code here
+```
+
+Write down a model to predict a pokemon's hitpoints based on their height, weight, legendary status (use $x$, $y$, $\beta$ notation). Define each variable.
+
+## Exercise 3) 
+
+Use `tidymodel` syntax to build a linear model with *all three variables* and estimate each $\beta$. Then, find and interpret the adjusted $R^2$.
+
+```{r hp-lm}
+# code here
+```
+
+Interpret the meaning of your estimates and write a brief description below. Use/discuss the the phrase "all else held constant" with your neighbor.
+
+
+## Exercise 4)
+
+Do the coefficients match your expectations for the previous exercise? Why or why not? Write code to explore any oddities further.
+
+```{r explain-legendary-coefficient}
+# code here
+```
+
+
+## Exercise 5)
+
+Some think that certain pokemon types have higher `hp` than others.
+
+```{r hp-vs-type}
+pokemon %>%
+  group_by(type_1) %>%
+  summarize(mean_hp = mean(hp), n = n())
+```
+
+#### a) Construct a linear model in `R` to determine the effect of pokemon type on `hp`. 
+
+```{r hp-type-lm}
+# code here
+```
+
+
+#### b) Interpret the meaning of your estimates and write a brief description below. Are any types missing?
+
+
+#### c) Given the output of your code, write down the linear model (use $x$, $y$, $\beta$ notation). Define each variable.
